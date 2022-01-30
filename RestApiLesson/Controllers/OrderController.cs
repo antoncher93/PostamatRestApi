@@ -5,6 +5,7 @@ using RestApiLesson.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace RestApiLesson.Controllers
@@ -53,19 +54,39 @@ namespace RestApiLesson.Controllers
         }
 
 
-        [HttpGet("new/{postamatId}")]
-        public async Task<ActionResult<Order>> Create(int postamatId)
+        /// <summary>
+        /// Отправляет заказ в указанный постамат
+        /// </summary>
+        /// <param name="order"></param>
+        /// <param name="postamatNumber"></param>
+        /// <returns></returns>
+        [HttpPost("new/{postamatNumber}")]
+        public async Task<ActionResult<Order>> New([FromBody] Order order, string postamatNumber)
         {
-            var postamat = await _db.Postamats.FindAsync(postamatId);
+            var postamat = await _db.Postamats.FirstOrDefaultAsync(p => string.Equals(postamatNumber, p.Number));
             if (postamat is null)
                 return NotFound();
 
-            if(!postamat.IsWorking)
-                return Forbid();
+            if (!postamat.IsWorking)
+                return StatusCode(403);
 
-            var order = new Order(postamat.Number);
+            if (order is null)
+                return BadRequest();
 
-            _db.Orders.Add(order);
+            if (order.Products is null || order.Products.Length > 10)
+                return BadRequest();
+
+            order.PostamatNumber = postamatNumber;
+
+            if(!_db.Orders.Any(or => int.Equals(or.Id, order.Id)))
+            {
+                _db.Orders.Add(order);
+            }
+            else
+            {
+                _db.Update(order);
+            }
+
             _db.SaveChanges();
 
             return Ok(order);
@@ -80,6 +101,9 @@ namespace RestApiLesson.Controllers
         public async Task<ActionResult<Order>> Post(Order order)
         {
             if (order is null)
+                return BadRequest();
+
+            if (!_IsTelephoneMatch(order.TelephoneNumber))
                 return BadRequest();
 
             _db.Orders.Add(order);
@@ -100,6 +124,9 @@ namespace RestApiLesson.Controllers
 
             if (!_db.Orders.Any(p => int.Equals(p.Id, order.Id)))
                 return NotFound();
+
+            if (!_IsTelephoneMatch(order.TelephoneNumber))
+                return BadRequest();
 
             _db.Update(order);
             await _db.SaveChangesAsync();
@@ -123,5 +150,17 @@ namespace RestApiLesson.Controllers
             _db.SaveChanges();
             return Ok(order);
         }
+
+
+
+        #region Private methods
+
+        private bool _IsTelephoneMatch(string input)
+        {
+            var regex = new Regex(@"[+7]\d{3}-\d{3}-\d{2}-\d{2}");
+            return regex.IsMatch(input);
+        }
+
+        #endregion
     }
 }

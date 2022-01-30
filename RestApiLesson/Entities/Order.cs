@@ -11,21 +11,11 @@ namespace RestApiLesson.Entities
     {
         public int Id { get; set; }
         public int Number { get; set; }
-        public int Status { get; private set; }
+        public int Status { get; internal set; }
         public string[] Products { get; set; }
         public decimal Price { get; set; }
-        public string PostamatNumber { get; private set; }
+        public string PostamatNumber { get; internal set; }
         public string TelephoneNumber { get; set; }
         public string ReceiverFullName { get; set; }
-
-        public Order()
-        {
-
-        }
-
-        public Order(string postamat) : this()
-        {
-            PostamatNumber = postamat;
-        }
     }
 }

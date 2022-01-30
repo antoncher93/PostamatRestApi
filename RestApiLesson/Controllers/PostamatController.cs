@@ -5,6 +5,7 @@ using RestApiLesson.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace RestApiLesson.Controllers
@@ -31,8 +32,6 @@ namespace RestApiLesson.Controllers
                 });
                 db.SaveChanges();
             }
-
-           
         }
 
         /// <summary>
@@ -56,6 +55,10 @@ namespace RestApiLesson.Controllers
         [HttpGet("{number}")]
         public async Task<ActionResult<Postamat>> Get(string number)
         {
+            var regex = new Regex(@"\w{4}-\w{4}");
+            if (!regex.IsMatch(number))
+                return BadRequest();
+
             var postamat = await _db.Postamats.FirstOrDefaultAsync(p => string.Equals(p.Number, number));
             if (postamat is null)
                 return NotFound();
@@ -63,6 +66,21 @@ namespace RestApiLesson.Controllers
             return new ObjectResult(postamat);
         }
 
-        
+        [HttpPost]
+        public async Task<ActionResult<Postamat>> Post(Postamat postamat)
+        {
+            if (postamat is null)
+                return BadRequest();
+
+            var regex = new Regex(@"\w{4}-\w{4}");
+            if (!regex.IsMatch(postamat.Number))
+                return BadRequest();
+
+            _db.Add(postamat);
+            await _db.SaveChangesAsync();
+            return Ok(postamat);
+        }
+
+
     }
 }

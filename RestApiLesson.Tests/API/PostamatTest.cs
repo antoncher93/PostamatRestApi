@@ -34,9 +34,9 @@ namespace RestApiLesson.Tests.API
             // Arrange
             var postamat = new Postamat()
             {
-                Id = 5,
                 Number = "0000-0000",
-                Adress = "Adress1"
+                Adress = "Adress1",
+                IsWorking = true
             };
 
             _fixture.PostamatsContext.Postamats.Add(postamat);
@@ -48,7 +48,17 @@ namespace RestApiLesson.Tests.API
             // Assert
             Assert.Equal(HttpStatusCode.OK, responce.StatusCode);
             var result = Newtonsoft.Json.JsonConvert.DeserializeObject<Postamat>(await responce.Content.ReadAsStringAsync());
-            Assert.Equal(5, result.Id);
+            Assert.Equal("0000-0000", result.Number);
+        }
+
+        [Fact]
+        public async Task PostamatNotMatchNumberReturnsBadRequestTest()
+        {
+            // Arrange
+            // Act
+            var responce = await _fixture.Client.GetAsync("api/postamat/badname");
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, responce.StatusCode);
         }
     }
 }
